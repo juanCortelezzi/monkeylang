@@ -1,0 +1,21 @@
+type token_kind =
+  | Illegal
+  | EOF
+  | Ident
+  | Int
+  | Assign
+  | Plus
+  | Comma
+  | Semicolon
+  | LParen
+  | RParen
+  | LBrace
+  | RBrace
+  | Function
+  | Let
+[@@deriving compare, equal, sexp_of]
+
+type t =
+  { kind : token_kind
+  ; literal : string
+  }
