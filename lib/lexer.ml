@@ -8,16 +8,17 @@ type t =
   }
 
 let print lexer =
-  let s = "" in
+  let s = "Lexer:\n" in
+  let s = s ^ "input: `" ^ lexer.input ^ "`\n" in
   let s = s ^ "position: " ^ Int.to_string lexer.position ^ "\n" in
   let s = s ^ "read_pos: " ^ Int.to_string lexer.read_position ^ "\n" in
   let s =
-    s
-    ^ "ch: "
-    ^ (match lexer.ch with
-       | Some c -> Char.to_string c
-       | None -> "_")
-    ^ "\n"
+    let ch =
+      match lexer.ch with
+      | Some c -> Char.to_string c
+      | None -> "_"
+    in
+    s ^ "ch: `" ^ ch ^ "`\n"
   in
   Stdlib.print_endline s;
   lexer
@@ -48,16 +49,18 @@ let next_token lexer =
     | Some '}' -> { kind = RBrace; literal = "}" }
     | _ -> { kind = EOF; literal = "" }
   in
+  (* Stdlib.print_endline ("literal: `" ^ token.literal ^ "`"); *)
   read_char lexer, token
 ;;
 
 let create input = read_char { input; position = 0; read_position = 0; ch = None }
 
-let%test_unit "next_token" =
+let%test_unit "test_next_token" =
   let open Token in
-  let input = "=_(){},;" in
+  let input = "=+(){},;" in
   let tokens =
     [ { kind = Assign; literal = "=" }
+    ; { kind = Plus; literal = "+" }
     ; { kind = LParen; literal = "(" }
     ; { kind = RParen; literal = ")" }
     ; { kind = LBrace; literal = "{" }
@@ -77,5 +80,5 @@ let%test_unit "next_token" =
       loop (index + 1) new_lexer
     | None -> ()
   in
-  create input |> print |> loop 0 |> ignore
+  create input |> loop 0 |> ignore
 ;;
