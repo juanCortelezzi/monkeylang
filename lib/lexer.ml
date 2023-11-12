@@ -261,3 +261,103 @@ let result = add(five, ten);
   in
   create input |> loop 0 |> ignore
 ;;
+
+let%test_unit "test_next_token_with_code_3" =
+  let open Token in
+  let input =
+    {|let five = 5;
+let ten = 10;
+let add = fn(x, y) {
+  x + y;
+};
+
+let result = add(five, ten);
+!-/*5;
+5 < 10 > 5;
+
+if (5 < 10) {
+  return true;
+} else {
+  return false;
+}|}
+  in
+  let tokens =
+    [ { kind = Let }
+    ; { kind = Ident "five" }
+    ; { kind = Assign }
+    ; { kind = Int 5 }
+    ; { kind = Semicolon }
+    ; { kind = Let }
+    ; { kind = Ident "ten" }
+    ; { kind = Assign }
+    ; { kind = Int 10 }
+    ; { kind = Semicolon }
+    ; { kind = Let }
+    ; { kind = Ident "add" }
+    ; { kind = Assign }
+    ; { kind = Function }
+    ; { kind = LParen }
+    ; { kind = Ident "x" }
+    ; { kind = Comma }
+    ; { kind = Ident "y" }
+    ; { kind = RParen }
+    ; { kind = LBrace }
+    ; { kind = Ident "x" }
+    ; { kind = Plus }
+    ; { kind = Ident "y" }
+    ; { kind = Semicolon }
+    ; { kind = RBrace }
+    ; { kind = Semicolon }
+    ; { kind = Let }
+    ; { kind = Ident "result" }
+    ; { kind = Assign }
+    ; { kind = Ident "add" }
+    ; { kind = LParen }
+    ; { kind = Ident "five" }
+    ; { kind = Comma }
+    ; { kind = Ident "ten" }
+    ; { kind = RParen }
+    ; { kind = Semicolon }
+    ; { kind = Bang }
+    ; { kind = Minus }
+    ; { kind = Slash }
+    ; { kind = Asterisk }
+    ; { kind = Int 5 }
+    ; { kind = Semicolon }
+    ; { kind = Int 5 }
+    ; { kind = LT }
+    ; { kind = Int 10 }
+    ; { kind = GT }
+    ; { kind = Int 5 }
+    ; { kind = Semicolon }
+    ; { kind = If }
+    ; { kind = LParen }
+    ; { kind = Int 5 }
+    ; { kind = LT }
+    ; { kind = Int 10 }
+    ; { kind = RParen }
+    ; { kind = LBrace }
+    ; { kind = Return }
+    ; { kind = True }
+    ; { kind = Semicolon }
+    ; { kind = RBrace }
+    ; { kind = Else }
+    ; { kind = LBrace }
+    ; { kind = Return }
+    ; { kind = False }
+    ; { kind = Semicolon }
+    ; { kind = RBrace }
+    ; { kind = EOF }
+    ]
+  in
+  let rec loop index lexer =
+    let new_lexer, token = next_token lexer in
+    let expected_token = List.nth tokens index in
+    match expected_token with
+    | Some t ->
+      [%test_result: token_kind] token.kind ~expect:t.kind;
+      loop (index + 1) new_lexer
+    | None -> ()
+  in
+  create input |> loop 0 |> ignore
+;;

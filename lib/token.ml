@@ -22,6 +22,11 @@ type token_kind =
   | Let
   | Function
   | Ident of string
+  | True
+  | False
+  | If
+  | Else
+  | Return
   (* Data types *)
   | Int of int
   | Illegal of string
@@ -33,6 +38,11 @@ let keywords string =
   match string with
   | "fn" -> Some Function
   | "let" -> Some Let
+  | "true" -> Some True
+  | "false" -> Some False
+  | "if" -> Some If
+  | "else" -> Some Else
+  | "return" -> Some Return
   | _ -> None
 ;;
 
@@ -61,6 +71,11 @@ let to_string token =
   | GT -> "GT"
   | Let -> "Let"
   | Function -> "Function"
+  | True -> "True"
+  | False -> "False"
+  | If -> "If"
+  | Else -> "Else"
+  | Return -> "Return"
   | Ident string -> "Ident(`" ^ string ^ "`)"
   | Int int -> "Int(`" ^ Int.to_string int ^ "`)"
   | Illegal string -> "Illegal(`" ^ string ^ "`)"
