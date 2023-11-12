@@ -7,6 +7,17 @@ type t =
   ; ch : char option
   }
 
+let char_to_literal c =
+  match c with
+  | Some s -> String.of_char s
+  | None -> ""
+;;
+
+let is_letter c = Char.is_alpha c || Char.equal c '_'
+
+(* Although a simple wrapper for now, it might be extended later. *)
+let is_digit c = Char.is_digit c
+
 let to_string lexer =
   let s = "Lexer:\n" in
   let s = s ^ "input: `" ^ lexer.input ^ "`\n" in
@@ -34,17 +45,6 @@ let advance lexer =
     { lexer with position; read_position; ch = Some ch })
 ;;
 
-let char_to_literal c =
-  match c with
-  | Some s -> String.of_char s
-  | None -> ""
-;;
-
-let is_letter c = Char.is_alpha c || Char.equal c '_'
-
-(* Although a simple wrapper for now, it might be extended later. *)
-let is_digit c = Char.is_digit c
-
 let rec skip_whitespace lexer =
   match lexer.ch with
   | Some ch when Char.is_whitespace ch -> skip_whitespace (advance lexer)
@@ -67,21 +67,23 @@ let next_token l =
   let open Token in
   let l = skip_whitespace l in
   match l.ch with
-  | Some '=' -> advance l, { kind = Assign }
-  | Some ';' -> advance l, { kind = Semicolon }
-  | Some '(' -> advance l, { kind = LParen }
-  | Some ')' -> advance l, { kind = RParen }
-  | Some ',' -> advance l, { kind = Comma }
-  | Some '+' -> advance l, { kind = Plus }
-  | Some '{' -> advance l, { kind = LBrace }
-  | Some '}' -> advance l, { kind = RBrace }
-  | Some ch when is_letter ch ->
-    let lexer, ident = read_while ~f:is_letter l in
-    lexer, { kind = lookup_ident ident }
-  | Some ch when is_digit ch ->
-    let lexer, ident = read_while ~f:is_digit l in
-    lexer, { kind = Int (Int.of_string ident) }
-  | Some _ -> advance l, { kind = Illegal (char_to_literal l.ch) }
+  | Some ch ->
+    (match ch with
+     | '=' -> advance l, { kind = Assign }
+     | ';' -> advance l, { kind = Semicolon }
+     | '(' -> advance l, { kind = LParen }
+     | ')' -> advance l, { kind = RParen }
+     | ',' -> advance l, { kind = Comma }
+     | '+' -> advance l, { kind = Plus }
+     | '{' -> advance l, { kind = LBrace }
+     | '}' -> advance l, { kind = RBrace }
+     | ch when is_letter ch ->
+       let lexer, ident = read_while ~f:is_letter l in
+       lexer, { kind = lookup_ident ident }
+     | ch when is_digit ch ->
+       let lexer, ident = read_while ~f:is_digit l in
+       lexer, { kind = Int (Int.of_string ident) }
+     | _ -> advance l, { kind = Illegal (char_to_literal l.ch) })
   | None -> advance l, { kind = EOF }
 ;;
 
