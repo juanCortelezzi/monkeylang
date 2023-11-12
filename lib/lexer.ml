@@ -7,7 +7,7 @@ type t =
   ; ch : char option
   }
 
-let print lexer =
+let to_string lexer =
   let s = "Lexer:\n" in
   let s = s ^ "input: `" ^ lexer.input ^ "`\n" in
   let s = s ^ "position: " ^ Int.to_string lexer.position ^ "\n" in
@@ -20,8 +20,7 @@ let print lexer =
     in
     s ^ "ch: `" ^ ch ^ "`\n"
   in
-  Stdlib.print_endline s;
-  lexer
+  s
 ;;
 
 let advance lexer =
@@ -68,39 +67,39 @@ let next_token l =
   let open Token in
   let l = skip_whitespace l in
   match l.ch with
-  | Some '=' -> advance l, { kind = Assign; literal = char_to_literal l.ch }
-  | Some ';' -> advance l, { kind = Semicolon; literal = char_to_literal l.ch }
-  | Some '(' -> advance l, { kind = LParen; literal = char_to_literal l.ch }
-  | Some ')' -> advance l, { kind = RParen; literal = char_to_literal l.ch }
-  | Some ',' -> advance l, { kind = Comma; literal = char_to_literal l.ch }
-  | Some '+' -> advance l, { kind = Plus; literal = char_to_literal l.ch }
-  | Some '{' -> advance l, { kind = LBrace; literal = char_to_literal l.ch }
-  | Some '}' -> advance l, { kind = RBrace; literal = char_to_literal l.ch }
+  | Some '=' -> advance l, { kind = Assign }
+  | Some ';' -> advance l, { kind = Semicolon }
+  | Some '(' -> advance l, { kind = LParen }
+  | Some ')' -> advance l, { kind = RParen }
+  | Some ',' -> advance l, { kind = Comma }
+  | Some '+' -> advance l, { kind = Plus }
+  | Some '{' -> advance l, { kind = LBrace }
+  | Some '}' -> advance l, { kind = RBrace }
   | Some ch when is_letter ch ->
     let lexer, ident = read_while ~f:is_letter l in
-    lexer, { kind = lookup_ident ident; literal = ident }
+    lexer, { kind = lookup_ident ident }
   | Some ch when is_digit ch ->
     let lexer, ident = read_while ~f:is_digit l in
-    lexer, { kind = Int; literal = ident }
-  | Some _ -> advance l, { kind = Illegal; literal = char_to_literal l.ch }
-  | None -> advance l, { kind = EOF; literal = "" }
+    lexer, { kind = Int (Int.of_string ident) }
+  | Some _ -> advance l, { kind = Illegal (char_to_literal l.ch) }
+  | None -> advance l, { kind = EOF }
 ;;
 
 let create input = advance { input; position = 0; read_position = 0; ch = None }
 
-let%test_unit "test_next_token" =
+let%test_unit "test_next_token_with_tokens" =
   let open Token in
   let input = "=+(){},;" in
   let tokens =
-    [ { kind = Assign; literal = "=" }
-    ; { kind = Plus; literal = "+" }
-    ; { kind = LParen; literal = "(" }
-    ; { kind = RParen; literal = ")" }
-    ; { kind = LBrace; literal = "{" }
-    ; { kind = RBrace; literal = "}" }
-    ; { kind = Comma; literal = "," }
-    ; { kind = Semicolon; literal = ";" }
-    ; { kind = EOF; literal = "" }
+    [ { kind = Assign }
+    ; { kind = Plus }
+    ; { kind = LParen }
+    ; { kind = RParen }
+    ; { kind = LBrace }
+    ; { kind = RBrace }
+    ; { kind = Comma }
+    ; { kind = Semicolon }
+    ; { kind = EOF }
     ]
   in
   let rec loop index lexer =
@@ -109,14 +108,13 @@ let%test_unit "test_next_token" =
     match expected_token with
     | Some t ->
       [%test_result: token_kind] token.kind ~expect:t.kind;
-      [%test_result: string] token.literal ~expect:t.literal;
       loop (index + 1) new_lexer
     | None -> ()
   in
   create input |> loop 0 |> ignore
 ;;
 
-let%test_unit "adsfads" =
+let%test_unit "test_next_token_with_code" =
   let open Token in
   let input =
     {|let five = 5;
@@ -128,43 +126,43 @@ let result = add(five, ten);
 |}
   in
   let tokens =
-    [ { kind = Let; literal = "let" }
-    ; { kind = Ident; literal = "five" }
-    ; { kind = Assign; literal = "=" }
-    ; { kind = Int; literal = "5" }
-    ; { kind = Semicolon; literal = ";" }
-    ; { kind = Let; literal = "let" }
-    ; { kind = Ident; literal = "ten" }
-    ; { kind = Assign; literal = "=" }
-    ; { kind = Int; literal = "10" }
-    ; { kind = Semicolon; literal = ";" }
-    ; { kind = Let; literal = "let" }
-    ; { kind = Ident; literal = "add" }
-    ; { kind = Assign; literal = "=" }
-    ; { kind = Function; literal = "fn" }
-    ; { kind = LParen; literal = "(" }
-    ; { kind = Ident; literal = "x" }
-    ; { kind = Comma; literal = "," }
-    ; { kind = Ident; literal = "y" }
-    ; { kind = RParen; literal = ")" }
-    ; { kind = LBrace; literal = "{" }
-    ; { kind = Ident; literal = "x" }
-    ; { kind = Plus; literal = "+" }
-    ; { kind = Ident; literal = "y" }
-    ; { kind = Semicolon; literal = ";" }
-    ; { kind = RBrace; literal = "}" }
-    ; { kind = Semicolon; literal = ";" }
-    ; { kind = Let; literal = "let" }
-    ; { kind = Ident; literal = "result" }
-    ; { kind = Assign; literal = "=" }
-    ; { kind = Ident; literal = "add" }
-    ; { kind = LParen; literal = "(" }
-    ; { kind = Ident; literal = "five" }
-    ; { kind = Comma; literal = "," }
-    ; { kind = Ident; literal = "ten" }
-    ; { kind = RParen; literal = ")" }
-    ; { kind = Semicolon; literal = ";" }
-    ; { kind = EOF; literal = "" }
+    [ { kind = Let }
+    ; { kind = Ident "five" }
+    ; { kind = Assign }
+    ; { kind = Int 5 }
+    ; { kind = Semicolon }
+    ; { kind = Let }
+    ; { kind = Ident "ten" }
+    ; { kind = Assign }
+    ; { kind = Int 10 }
+    ; { kind = Semicolon }
+    ; { kind = Let }
+    ; { kind = Ident "add" }
+    ; { kind = Assign }
+    ; { kind = Function }
+    ; { kind = LParen }
+    ; { kind = Ident "x" }
+    ; { kind = Comma }
+    ; { kind = Ident "y" }
+    ; { kind = RParen }
+    ; { kind = LBrace }
+    ; { kind = Ident "x" }
+    ; { kind = Plus }
+    ; { kind = Ident "y" }
+    ; { kind = Semicolon }
+    ; { kind = RBrace }
+    ; { kind = Semicolon }
+    ; { kind = Let }
+    ; { kind = Ident "result" }
+    ; { kind = Assign }
+    ; { kind = Ident "add" }
+    ; { kind = LParen }
+    ; { kind = Ident "five" }
+    ; { kind = Comma }
+    ; { kind = Ident "ten" }
+    ; { kind = RParen }
+    ; { kind = Semicolon }
+    ; { kind = EOF }
     ]
   in
   let rec loop index lexer =
@@ -173,7 +171,6 @@ let result = add(five, ten);
     match expected_token with
     | Some t ->
       [%test_result: token_kind] token.kind ~expect:t.kind;
-      [%test_result: string] token.literal ~expect:t.literal;
       loop (index + 1) new_lexer
     | None -> ()
   in
