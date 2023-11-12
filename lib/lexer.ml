@@ -7,12 +7,6 @@ type t =
   ; ch : char option
   }
 
-let char_to_literal c =
-  match c with
-  | Some s -> String.of_char s
-  | None -> ""
-;;
-
 let is_letter c = Char.is_alpha c || Char.equal c '_'
 
 (* Although a simple wrapper for now, it might be extended later. *)
@@ -34,15 +28,26 @@ let to_string lexer =
   s
 ;;
 
+let string_get_opt s i =
+  if i >= String.length s then None else Some (String.unsafe_get s i)
+;;
+
+let peek_char lexer = string_get_opt lexer.input lexer.read_position
+
+let peek_char_is ~value lexer : bool =
+  match peek_char lexer with
+  | Some ch -> Char.equal ch value
+  | None -> false
+;;
+
 let advance lexer =
-  let input_len = String.length lexer.input in
-  if lexer.read_position >= input_len
-  then { lexer with ch = None }
-  else (
-    let ch = String.get lexer.input lexer.read_position in
+  let ch = string_get_opt lexer.input lexer.read_position in
+  match ch with
+  | None -> { lexer with ch = None }
+  | Some _ ->
     let position = lexer.read_position in
     let read_position = lexer.read_position + 1 in
-    { lexer with position; read_position; ch = Some ch })
+    { lexer with position; read_position; ch }
 ;;
 
 let rec skip_whitespace lexer =
@@ -69,6 +74,7 @@ let next_token l =
   match l.ch with
   | Some ch ->
     (match ch with
+     | '=' when peek_char_is l ~value:'=' -> l |> advance |> advance, { kind = Eq }
      | '=' -> advance l, { kind = Assign }
      | ';' -> advance l, { kind = Semicolon }
      | '(' -> advance l, { kind = LParen }
@@ -78,6 +84,7 @@ let next_token l =
      | '{' -> advance l, { kind = LBrace }
      | '}' -> advance l, { kind = RBrace }
      | '-' -> advance l, { kind = Minus }
+     | '!' when peek_char_is l ~value:'=' -> l |> advance |> advance, { kind = NotEq }
      | '!' -> advance l, { kind = Bang }
      | '/' -> advance l, { kind = Slash }
      | '*' -> advance l, { kind = Asterisk }
@@ -89,7 +96,7 @@ let next_token l =
      | ch when is_digit ch ->
        let lexer, ident = read_while ~f:is_digit l in
        lexer, { kind = Int (Int.of_string ident) }
-     | _ -> advance l, { kind = Illegal (char_to_literal l.ch) })
+     | ch -> advance l, { kind = Illegal (String.of_char ch) })
   | None -> advance l, { kind = EOF }
 ;;
 
@@ -279,7 +286,10 @@ if (5 < 10) {
   return true;
 } else {
   return false;
-}|}
+}
+10 == 10;
+10 != 9;
+|}
   in
   let tokens =
     [ { kind = Let }
@@ -347,6 +357,14 @@ if (5 < 10) {
     ; { kind = False }
     ; { kind = Semicolon }
     ; { kind = RBrace }
+    ; { kind = Int 10 }
+    ; { kind = Eq }
+    ; { kind = Int 10 }
+    ; { kind = Semicolon }
+    ; { kind = Int 10 }
+    ; { kind = NotEq }
+    ; { kind = Int 9 }
+    ; { kind = Semicolon }
     ; { kind = EOF }
     ]
   in

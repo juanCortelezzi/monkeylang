@@ -18,6 +18,8 @@ type token_kind =
   | Slash
   | LT
   | GT
+  | Eq
+  | NotEq
   (* keywords *)
   | Let
   | Function
@@ -69,6 +71,8 @@ let to_string token =
   | Slash -> "Slash"
   | LT -> "LT"
   | GT -> "GT"
+  | Eq -> "Eq"
+  | NotEq -> "NotEq"
   | Let -> "Let"
   | Function -> "Function"
   | True -> "True"
