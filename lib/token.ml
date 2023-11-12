@@ -1,20 +1,30 @@
 open Base
 
 type token_kind =
-  | EOF
-  | Assign
-  | Plus
+  (* Delimiters *)
   | Comma
   | Semicolon
   | LParen
   | RParen
   | LBrace
   | RBrace
-  | Function
+  | EOF
+  (* operators *)
+  | Assign
+  | Plus
+  | Minus
+  | Bang
+  | Asterisk
+  | Slash
+  | LT
+  | GT
+  (* keywords *)
   | Let
-  | Illegal of string
+  | Function
   | Ident of string
+  (* Data types *)
   | Int of int
+  | Illegal of string
 [@@deriving equal, compare, sexp_of]
 
 type t = { kind : token_kind }
@@ -34,18 +44,24 @@ let lookup_ident string =
 
 let to_string token =
   match token.kind with
-  | EOF -> "EOF"
-  | Assign -> "Assign"
-  | Plus -> "Plus"
   | Comma -> "Comma"
   | Semicolon -> "Semicolon"
   | LParen -> "LParen"
   | RParen -> "RParen"
   | LBrace -> "LBrace"
   | RBrace -> "RBrace"
-  | Function -> "Function"
+  | EOF -> "EOF"
+  | Assign -> "Assign"
+  | Plus -> "Plus"
+  | Minus -> "Minus"
+  | Bang -> "Bang"
+  | Asterisk -> "Asterisk"
+  | Slash -> "Slash"
+  | LT -> "LT"
+  | GT -> "GT"
   | Let -> "Let"
-  | Illegal string -> "Illegal(`" ^ string ^ "`)"
+  | Function -> "Function"
   | Ident string -> "Ident(`" ^ string ^ "`)"
   | Int int -> "Int(`" ^ Int.to_string int ^ "`)"
+  | Illegal string -> "Illegal(`" ^ string ^ "`)"
 ;;
