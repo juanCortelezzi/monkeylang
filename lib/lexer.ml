@@ -13,19 +13,17 @@ let is_letter c = Char.is_alpha c || Char.equal c '_'
 let is_digit c = Char.is_digit c
 
 let to_string lexer =
-  let s = "Lexer:\n" in
-  let s = s ^ "input: `" ^ lexer.input ^ "`\n" in
-  let s = s ^ "position: " ^ Int.to_string lexer.position ^ "\n" in
-  let s = s ^ "read_pos: " ^ Int.to_string lexer.read_position ^ "\n" in
-  let s =
-    let ch =
-      match lexer.ch with
-      | Some c -> Char.to_string c
-      | None -> "_"
-    in
-    s ^ "ch: `" ^ ch ^ "`\n"
-  in
-  s
+  Printf.sprintf
+    {|Lexer:
+input: "%s"
+position: %d
+read_pos: %d
+ch: '%c'
+|}
+    lexer.input
+    lexer.position
+    lexer.read_position
+    (Option.value ~default:'_' lexer.ch)
 ;;
 
 let string_get_opt s i =
@@ -57,19 +55,18 @@ let rec skip_whitespace lexer =
 ;;
 
 let read_while ~f lexer =
-  let pos = lexer.position in
   let rec loop lexer =
     match lexer.ch with
     | Some ch when f ch -> loop (advance lexer)
     | _ -> lexer
   in
   let new_lexer = loop lexer in
-  let ident = String.sub new_lexer.input ~pos ~len:(new_lexer.position - pos) in
+  let length = new_lexer.position - lexer.position in
+  let ident = String.sub new_lexer.input ~pos:lexer.position ~len:length in
   new_lexer, ident
 ;;
 
-let next_token l =
-  let open Token in
+let next_token l : t * Token.t =
   let l = skip_whitespace l in
   match l.ch with
   | Some ch ->
@@ -92,7 +89,7 @@ let next_token l =
      | '>' -> advance l, { kind = GT }
      | ch when is_letter ch ->
        let lexer, ident = read_while ~f:is_letter l in
-       lexer, { kind = lookup_ident ident }
+       lexer, { kind = Token.lookup_ident ident }
      | ch when is_digit ch ->
        let lexer, ident = read_while ~f:is_digit l in
        lexer, { kind = Int (Int.of_string ident) }
